@@ -13,19 +13,20 @@ extension Request {
 
 public struct ClientLoggingController: RouteCollection, Sendable {
     var extractBodyData: @Sendable (Request) -> Data?
+    var db: @Sendable (Request) -> Database
 
-    public init(extractBodyData: @escaping @Sendable (Request) -> Data? = { $0.bodyData }) {
+    public init(extractBodyData: @escaping @Sendable (Request) -> Data? = { $0.bodyData }, db: @escaping @Sendable (Request) -> Database) {
         self.extractBodyData = extractBodyData
+        self.db = db
     }
 
     public func boot(routes: any RoutesBuilder) throws {
-        let clientLoggingRoutes = routes.grouped("client-log")
-
-        clientLoggingRoutes.post(use: logClient)
+        let group = routes.grouped("v1")
+        group.post("client-log", use: logClient)
     }
 
     @Sendable
-    func logClient(_ req: Request) async throws -> String {
+    public func logClient(_ req: Request) async throws -> String {
         guard let data = extractBodyData(req), let logItem = try? JSONDecoder().decode(ClientLogItemDto.self, from: data) else {
             throw Abort(.badRequest)
         }
@@ -49,7 +50,7 @@ public struct ClientLoggingController: RouteCollection, Sendable {
             )
         }
 
-        try await logs.create(on: req.db)
+        try await logs.create(on: db(req))
 
         return "Logged"
     }

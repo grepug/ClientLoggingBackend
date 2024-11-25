@@ -86,8 +86,10 @@ public class ClientLogEntry: Model, @unchecked Sendable {
     }
 }
 
-struct CreateClientLogTable: Migration {
-    func prepare(on database: Database) -> EventLoopFuture<Void> {
+public struct CreateClientLogTable: Migration {
+    public init() {}
+
+    public func prepare(on database: Database) -> EventLoopFuture<Void> {
         database.schema(ClientLogEntry.schema)
             .id()
             .field("app_id", .string, .required)
@@ -107,7 +109,7 @@ struct CreateClientLogTable: Migration {
             .create()
     }
 
-    func revert(on database: Database) -> EventLoopFuture<Void> {
+    public func revert(on database: Database) -> EventLoopFuture<Void> {
         database.schema(ClientLogEntry.schema).delete()
     }
 }
